@@ -75,12 +75,9 @@ class ReservaController extends Controller
     /**
      * Salva uma nova solicitação de reserva feita pelo usuário e notifica os admins
      */
-    /**
-     * Salva uma nova solicitação de reserva feita pelo usuário e notifica os admins
-     */
     public function store(Request $request)
     {
-        // 1. Removida a obrigatoriedade do 'cliente' aqui, já que usamos o ID do usuário logado
+        // 1. Validação dos dados recebidos do formulário
         $request->validate([
             'destino_id' => 'required|exists:destinos,id',
             'data_reserva' => 'required|date',
@@ -94,7 +91,6 @@ class ReservaController extends Controller
             'data_viagem' => $request->data_reserva, 
             'vagas' => $request->vagas ?? 1, 
             'status' => 'pendente'
-            // Linha 'cliente' removida para não quebrar o banco!
         ]);
 
         // [NOTIFICAÇÃO] Envia um alerta para todos os administradores cadastrados
@@ -118,12 +114,12 @@ class ReservaController extends Controller
         $reserva->status = $status; // 'pendente', 'aprovada', 'realizada' ou 'cancelada'
         $reserva->save();
 
-        // [NOTIFICAÇÃO] Envia o feedback direto para o usuário que fez o pedido (se houver usuário vinculado)
+        // [NOTIFICAÇÃO] Envia o feedback direto para o usuário que fez o pedido
         if ($reserva->user) {
             $reserva->user->notify(new StatusReservaNotification($reserva));
         }
 
-        return redirect()->route('reservas.index')->with('success', 'Status da viagem atualizado com sucesso!');
+        return redirect()->route('reservas.index')->with('success', 'Status da viagem updated com sucesso!');
     }
 
     /**
@@ -145,10 +141,7 @@ class ReservaController extends Controller
     }
 
     /**
-     * Gera o relatório analítico de faturamento e estatísticas por destino (Apenas Admin)
-     */
-    /**
-     * Gera o relatório analítico filtrado por período de data (Apenas Admin)
+     * Gera o relatório analítico filtrado por período de data e nome do destino (Apenas Admin)
      */
     public function relatorioDestinos(Request $request)
     {
@@ -156,11 +149,20 @@ class ReservaController extends Controller
             return redirect()->route('reservas.index')->with('error', 'Acesso negado.');
         }
 
-        // Pega as datas passadas pelo filtro na tela
+        // Pega os parâmetros do filtro na tela
         $dataInicio = $request->input('data_inicio');
         $dataFim = $request->input('data_fim');
+        $buscaDestino = $request->input('busca_destino');
 
-        $destinos = Destino::all();
+        // Filtra a lista de destinos por aproximação se houver termo de busca
+        if ($buscaDestino) {
+            $destinos = Destino::where('cidade', 'LIKE', "%{$buscaDestino}%")
+                ->orWhere('pais', 'LIKE', "%{$buscaDestino}%")
+                ->get();
+        } else {
+            $destinos = Destino::all();
+        }
+
         $relatorio = [];
 
         foreach ($destinos as $destino) {
@@ -183,28 +185,30 @@ class ReservaController extends Controller
                 return $carry + ($reserva->vagas * ($destino->preco_pacote ?? 0));
             }, 0);
 
-            $taxaAprovação = 0;
+            $taxaAprovacao = 0;
             $totalSolicitacoes = $todasDoDestino->count();
             if ($totalSolicitacoes > 0) {
                 $aprovadasERealizadas = $todasDoDestino->whereIn('status', ['aprovada', 'realizada'])->count();
-                $taxaAprovação = ($aprovadasERealizadas / $totalSolicitacoes) * 100;
+                $taxaAprovacao = ($aprovadasERealizadas / $totalSolicitacoes) * 100;
             }
 
             $relatorio[] = [
                 'destino' => $destino,
                 'faturamento' => $faturamento,
                 'total_pessoas' => $totalPessoas,
-                'taxa_aprovacao' => $taxaAprovação,
+                'taxa_aprovacao' => $taxaAprovacao,
                 'total_solicitacoes' => $totalSolicitacoes
             ];
         }
 
+        // Ordena o relatório decrescente por maior faturamento
         usort($relatorio, function ($a, $b) {
             return $b['faturamento'] <=> $a['faturamento'];
         });
 
         return view('reservas.relatorio_destinos', compact('relatorio', 'dataInicio', 'dataFim'));
     }
+
     /**
      * Registra a avaliação do usuário para um destino específico (Limite: 1 por destino)
      */
@@ -224,7 +228,6 @@ class ReservaController extends Controller
         }
 
         // Segurança 2: Trava de 1 única avaliação por Destino
-        // Vamos verificar na tabela de avaliações se esse user já avaliou esse destino_id
         $jaAvaliou = \App\Models\Avaliacao::where('user_id', $user->id)
                                          ->where('destino_id', $reserva->destino_id)
                                          ->exists();

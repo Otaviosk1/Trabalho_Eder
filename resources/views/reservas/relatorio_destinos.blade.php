@@ -26,20 +26,27 @@
         </div>
     </div>
 
-    {{-- BARRA DE FILTROS POR PERÍODO DE DATA --}}
+    {{-- BARRA DE FILTROS POR PERÍODO DE DATA E BUSCA POR DESTINO --}}
     <div class="card shadow-sm border-0 rounded-3 p-3 mb-4 area-nao-imprimivel">
         <form action="{{ route('reservas.relatorio.destinos') }}" method="GET" class="row g-3 align-items-end">
-            <div class="col-md-4">
+            <div class="col-md-3">
+                <label class="form-label text-secondary small fw-semibold">Buscar Destino:</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                    <input type="text" name="busca_destino" class="form-control border-start-0 border shadow-sm py-2" placeholder="Ex: Roma ou Itália..." value="{{ request('busca_destino') }}">
+                </div>
+            </div>
+            <div class="col-md-3">
                 <label class="form-label text-secondary small fw-semibold">Data Inicial do Embarque:</label>
                 <input type="date" name="data_inicio" class="form-control border shadow-sm py-2" value="{{ $dataInicio }}">
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <label class="form-label text-secondary small fw-semibold">Data Final do Embarque:</label>
                 <input type="date" name="data_fim" class="form-control border shadow-sm py-2" value="{{ $dataFim }}">
             </div>
-            <div class="col-md-4 d-flex gap-2">
+            <div class="col-md-3 d-flex gap-2">
                 <button type="submit" class="btn btn-success py-2 w-100 rounded-pill shadow-sm">
-                    <i class="bi bi-filter-left me-1"></i> Filtrar Período
+                    <i class="bi bi-filter-left me-1"></i> Filtrar
                 </button>
                 <a href="{{ route('reservas.relatorio.destinos') }}" class="btn btn-light border py-2 w-100 rounded-pill shadow-sm text-secondary">
                     Limpar
@@ -66,7 +73,7 @@
                     </tr>
                 </thead>
                 <tbody class="text-secondary">
-                    @foreach($relatorio as $item)
+                    @forelse($relatorio as $item)
                         <tr>
                             <td class="ps-4">
                                 <div class="d-flex align-items-center gap-3">
@@ -94,7 +101,14 @@
                                 R$ {{ number_format($item['faturamento'], 2, ',', '.') }}
                             </td>
                         </tr>
-                    @endforeach
+                    @empty
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">
+                                <i class="bi bi-folder-x fs-3 d-block mb-2"></i>
+                                Nenhum destino encontrado para os filtros selecionados.
+                            </td>
+                        </tr>
+                    @endforelse
                 </tbody>
             </table>
         </div>

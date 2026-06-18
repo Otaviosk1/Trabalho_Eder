@@ -29,7 +29,7 @@
                         <i class="bi bi-compass-fill text-success"></i> Meu Histórico de Viagens
                     @endif
                 </h2>
-                <p class="text-muted mb-0">Acompanhe o fluxo e o status das intenções de viagem de forma organized.</p>
+                <p class="text-muted mb-0">Acompanhe o fluxo e o status das intenções de viagem de forma organizada.</p>
             </div>
             
             {{-- Botões de Ação do Topo (Apenas Admin) --}}
@@ -161,7 +161,7 @@
                                 <td class="text-end pe-4 area-nao-imprimivel">
                                     @if(Auth::user()->is_admin)
                                         <div class="btn-group btn-group-sm border rounded-pill shadow-sm bg-white overflow-hidden">
-                                            <a href="{{ route('reservas.status', [$reserva->id, 'aprovada']) }}" class="btn btn-light text-success border-0 px-3" title="Aprovar Reserva"><i class="bi bi-check-lg"></i> Approvar</a>
+                                            <a href="{{ route('reservas.status', [$reserva->id, 'aprovada']) }}" class="btn btn-light text-success border-0 px-3" title="Aprovar Reserva"><i class="bi bi-check-lg"></i> Aprovar</a>
                                             <a href="{{ route('reservas.status', [$reserva->id, 'cancelada']) }}" class="btn btn-light text-danger border-0 px-3" title="Rejeitar/Cancelar"><i class="bi bi-ban"></i> Rejeitar</a>
                                         </div>
                                     @else
@@ -413,26 +413,22 @@ function fecharToast() {
 }
 </script>
 
-{{-- Script de Filtragem (Exclusivo Admin) --}}
+{{-- Script de Filtragem Corrigido (Exclusivo Admin) --}}
 @if(Auth::user()->is_admin)
 <script>
 function filtrarPainelReservas() {
-    let termoBusca = document.getElementById('inputBuscaReservas').value.toLowerCase();
-    let { ...linhas } = document.querySelectorAll('.linha-reserva');
+    let termo = document.getElementById('inputBuscaReservas').value.toLowerCase().trim();
+    let linhas = document.querySelectorAll('.linha-reserva');
 
-    Object.values(linhas).forEach(function(linha) {
-        let conteudoLinha = textContentOrBlank(linha).toLowerCase();
-        if (conteudoLinha.includes(termoBusca)) {
-            linha.style.setProperty("display", "", "important");
+    linhas.forEach(function(linha) {
+        let textoDaLinha = linha.textContent.toLowerCase();
+        
+        if (textoDaLinha.includes(termo)) {
+            linha.style.display = ''; 
         } else {
-            linha.style.setProperty("display", "none", "important");
+            linha.style.display = 'none'; 
         }
     });
-}
-
-// Retorna o textContent de forma segura
-function textContentOrBlank(element) {
-    return element ? element.textContent : '';
 }
 </script>
 @endif
