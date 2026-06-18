@@ -14,6 +14,19 @@
                 </div>
             </div>
 
+            {{-- Bloco para capturar e exibir erros de validação --}}
+            @if ($errors->any())
+                <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm rounded-3 mb-4" role="alert">
+                    <h6 class="fw-bold mb-2"><i class="bi bi-exclamation-triangle-fill me-2"></i> Por favor, corrija os erros abaixo:</h6>
+                    <ul class="mb-0 small">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            @endif
+
             <form action="{{ route('destinos.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
 
