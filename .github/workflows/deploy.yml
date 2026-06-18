@@ -18,8 +18,19 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             cd /var/www/turismo
+            
+            # 1. Pega a posse para o robô poder atualizar o código
+            sudo chown -R ubuntu:ubuntu .
+            
+            # 2. Baixa as novidades do GitHub e instala as dependências
             git pull origin main
             composer install --no-interaction --prefer-dist --optimize-autoloader
             php artisan migrate --force
             php artisan optimize:clear
+            
+            # 3. Devolve a posse para o Apache poder salvar imagens e logs
+            sudo chown -R www-data:ubuntu .
+            sudo chmod -R 775 storage bootstrap/cache database
+            
+            # 4. Reinicia o servidor
             sudo systemctl restart apache2
