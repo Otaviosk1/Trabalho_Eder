@@ -11,11 +11,6 @@ use Illuminate\Support\Facades\Hash;
 
 class DestinoController extends Controller
 {
-    public function __construct()
-    {
-        // Exige autenticação para todos os métodos, EXCETO para listar (index) e ver detalhes (show)
-        $this->middleware('auth')->except(['index', 'show', 'loginView', 'loginMock', 'registerView', 'registerMock']);
-    }
     /**
      * Método que cuida da listagem na página inicial (Pública)
      * Trata também a barra de consulta/pesquisa filtrando por status aprovado
