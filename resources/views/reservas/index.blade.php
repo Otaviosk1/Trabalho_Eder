@@ -291,7 +291,7 @@
                                 </td>
                                 <td class="text-center fw-bold text-dark">{{ $reserva->vagas }}</td>
                                 
-                                {{-- SISTEMA DE AVALIAÇÃO COM TRAVA DE CONTROLE CORRIGIDO --}}
+                                {{-- SISTEMA DE AVALIAÇÃO: APENAS O BOTÃO FICA NA TABELA --}}
                                 <td>
                                     @if($reserva->status == 'realizada')
                                         <div class="d-flex align-items-center gap-2">
@@ -299,48 +299,17 @@
                                             
                                             @if(!Auth::user()->is_admin)
                                                 @php
-                                                    $jaAvaliou = \App\Models\Avaliacao::where('user_id', Auth::id())->where('destino_id', $reserva->destino_id)->exists();
+                                                    try {
+                                                        $jaAvaliou = \App\Models\Avaliacao::where('user_id', Auth::id())->where('destino_id', $reserva->destino_id)->exists();
+                                                    } catch (\Exception $e) {
+                                                        $jaAvaliou = false;
+                                                    }
                                                 @endphp
                                                 
                                                 @if(!$jaAvaliou)
-                                                    {{-- O data-bs-target precisa apontar para a ID única da RESERVA --}}
                                                     <button type="button" class="btn btn-warning btn-xs rounded-pill px-2 py-0.5 area-nao-imprimivel" style="font-size: 0.75rem;" data-bs-toggle="modal" data-bs-target="#modalAvaliarObj-{{ $reserva->id }}">
                                                         <i class="bi bi-star-fill"></i> Avaliar
                                                     </button>
-
-                                                    <div class="modal fade" id="modalAvaliarObj-{{ $reserva->id }}" tabindex="-1" aria-labelledby="labelModal-{{ $reserva->id }}" aria-hidden="true">
-                                                        <div class="modal-dialog modal-dialog-centered">
-                                                            <div class="modal-content border-0 shadow-lg rounded-3 text-start">
-                                                                <form action="{{ route('reservas.avaliar', $reserva->id) }}" method="POST">
-                                                                    @csrf
-                                                                    <div class="modal-header bg-dark text-white py-3">
-                                                                        <h6 class="modal-title fw-bold" id="labelModal-{{ $reserva->id }}"><i class="bi bi-star text-warning me-2"></i> Avaliar destino: {{ $reserva->destino->cidade ?? 'Destino' }}</h6>
-                                                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                                    </div>
-                                                                    <div class="modal-body text-secondary">
-                                                                        <div class="mb-3">
-                                                                            <label class="form-label fw-semibold small">Sua Nota (Estrelas):</label>
-                                                                            <select name="nota" class="form-select border shadow-sm" required>
-                                                                                <option value="5">⭐⭐⭐⭐⭐ (Excelente)</option>
-                                                                                <option value="4">⭐⭐⭐⭐ (Muito Bom)</option>
-                                                                                <option value="3">⭐⭐⭐ (Bom)</option>
-                                                                                <option value="2">⭐⭐ (Regular)</option>
-                                                                                <option value="1">⭐ (Ruim)</option>
-                                                                            </select>
-                                                                        </div>
-                                                                        <div class="mb-2">
-                                                                            <label class="form-label fw-semibold small">Seu Comentário (Opcional):</label>
-                                                                            <textarea name="comentario" class="form-control border shadow-sm" rows="3" placeholder="Conte como foi sua experiência de viagem..."></textarea>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div class="modal-footer bg-light border-0 py-2">
-                                                                        <button type="button" class="btn btn-light btn-sm border rounded-pill px-3" data-bs-dismiss="modal">Cancelar</button>
-                                                                        <button type="submit" class="btn btn-success btn-sm rounded-pill px-4">Enviar Nota</button>
-                                                                    </div>
-                                                                </form>
-                                                            </div>
-                                                        </div>
-                                                    </div>
                                                 @else
                                                     <span class="text-muted small italic" style="font-size: 0.75rem;"><i class="bi bi-check-all text-warning"></i> Avaliado</span>
                                                 @endif
@@ -364,45 +333,69 @@
     </div>
 </div>
 
+{{-- ===================================================================================== --}}
+{{-- MODAIS DE AVALIAÇÃO (Isolados fora das tabelas para evitar bug visual do Bootstrap) --}}
+{{-- ===================================================================================== --}}
+@if(!Auth::user()->is_admin)
+    @foreach($historico as $reserva)
+        @if($reserva->status == 'realizada')
+            <div class="modal fade" id="modalAvaliarObj-{{ $reserva->id }}" tabindex="-1" aria-labelledby="labelModal-{{ $reserva->id }}" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content border-0 shadow-lg rounded-3 text-start">
+                        <form action="{{ route('reservas.avaliar', $reserva->id) }}" method="POST">
+                            @csrf
+                            <div class="modal-header bg-dark text-white py-3">
+                                <h6 class="modal-title fw-bold" id="labelModal-{{ $reserva->id }}"><i class="bi bi-star text-warning me-2"></i> Avaliar destino: {{ $reserva->destino->cidade ?? 'Destino' }}</h6>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body text-secondary">
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold small">Sua Nota (Estrelas):</label>
+                                    <select name="nota" class="form-select border shadow-sm" required>
+                                        <option value="5">⭐⭐⭐⭐⭐ (Excelente)</option>
+                                        <option value="4">⭐⭐⭐⭐ (Muito Bom)</option>
+                                        <option value="3">⭐⭐⭐ (Bom)</option>
+                                        <option value="2">⭐⭐ (Regular)</option>
+                                        <option value="1">⭐ (Ruim)</option>
+                                    </select>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label fw-semibold small">Seu Comentário (Opcional):</label>
+                                    <textarea name="comentario" class="form-control border shadow-sm" rows="3" placeholder="Conte como foi sua experiência de viagem..."></textarea>
+                                </div>
+                            </div>
+                            <div class="modal-footer bg-light border-0 py-2">
+                                <button type="button" class="btn btn-light btn-sm border rounded-pill px-3" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-success btn-sm rounded-pill px-4">Enviar Nota</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        @endif
+    @endforeach
+@endif
+
 <style>
     @media print {
         .area-nao-imprimivel, .btn, .btn-group, .input-group, .navbar, .card-footer, header, footer, nav {
             display: none !important;
         }
-        body {
-            background-color: #fff !important;
-            font-size: 12px;
-        }
-        .container {
-            width: 100% !important;
-            max-width: 100% !important;
-            padding: 0 !important;
-        }
-        .card {
-            box-shadow: none !important;
-            border: 1px solid #dee2e6 !important;
-            margin-bottom: 20px !important;
-            page-break-inside: avoid;
-        }
-        .card-header {
-            background-color: #f8f9fa !important;
-            color: #000 !important;
-            border-bottom: 1px solid #dee2e6 !important;
-        }
+        body { background-color: #fff !important; font-size: 12px; }
+        .container { width: 100% !important; max-width: 100% !important; padding: 0 !important; }
+        .card { box-shadow: none !important; border: 1px solid #dee2e6 !important; margin-bottom: 20px !important; page-break-inside: avoid; }
+        .card-header { background-color: #f8f9fa !important; color: #000 !important; border-bottom: 1px solid #dee2e6 !important; }
     }
 </style>
 
 <script>
-// Script do Toast de Feedback
+// Script do Toast
 document.addEventListener("DOMContentLoaded", function() {
     let toastElement = document.getElementById('liveToast');
     if (toastElement) {
-        setTimeout(function() {
-            fecharToast();
-        }, 4000);
+        setTimeout(function() { fecharToast(); }, 4000);
     }
 });
-
 function fecharToast() {
     let toastElement = document.getElementById('liveToast');
     if (toastElement) {
@@ -413,16 +406,13 @@ function fecharToast() {
 }
 </script>
 
-{{-- Script de Filtragem Corrigido (Exclusivo Admin) --}}
 @if(Auth::user()->is_admin)
 <script>
 function filtrarPainelReservas() {
     let termo = document.getElementById('inputBuscaReservas').value.toLowerCase().trim();
     let linhas = document.querySelectorAll('.linha-reserva');
-
     linhas.forEach(function(linha) {
         let textoDaLinha = linha.textContent.toLowerCase();
-        
         if (textoDaLinha.includes(termo)) {
             linha.style.display = ''; 
         } else {
