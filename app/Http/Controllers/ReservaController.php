@@ -236,12 +236,13 @@ class ReservaController extends Controller
             return back()->with('error', 'Você já deixou uma avaliação para este destino!');
         }
 
-        // Criamos a avaliação na tabela usando o seu model correspondente
+        // Criamos a avaliação na tabela incluindo o campo nome_usuario obrigatório do banco
         \App\Models\Avaliacao::create([
             'user_id' => $user->id,
             'destino_id' => $reserva->destino_id,
             'nota' => $request->nota,
-            'comentario' => $request->comentario
+            'comentario' => $request->comentario,
+            'nome_usuario' => $user->name
         ]);
 
         return back()->with('success', 'Obrigado por avaliar o seu destino!');
